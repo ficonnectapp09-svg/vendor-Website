@@ -1,3 +1,7 @@
+# ==============================================================================
+# CONNECT APP BACKOFFICE - FRONTEND GITIGNORE
+# ==============================================================================
+
 # Logs
 logs
 *.log
@@ -7,16 +11,42 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
+# Dependencies
+node_modules/
+
+# Build & Cache Outputs
+dist/
+dist-ssr/
+build/
+coverage/
+.cache/
 *.local
+
+# Environment Files
 .env
 .env.*
+*.env
 !.env.example
+
+# Private Instructions
+AGENT.md
+AGENTS.md
+CHANGELOG.md
+
+# Private Keys & Certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.cer
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
 .DS_Store
 *.suo

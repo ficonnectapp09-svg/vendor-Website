@@ -1,0 +1,22 @@
+#!/bin/sh
+# ==============================================================================
+# Connect App Backoffice - Pre-Push Hook (Version Controlled)
+# ==============================================================================
+
+if command -v node >/dev/null 2>&1; then
+  node scripts/git-security-validator.js --pre-push
+  exit $?
+else
+  echo "[WARNING] Node.js is not found in PATH. Performing basic shell pre-push check..."
+  UPSTREAM=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || echo "origin/main")
+  FORBIDDEN=$(git diff --name-only --diff-filter=ACM "$UPSTREAM..HEAD" | grep -E '(^|/)(\.env(\..+)?|AGENT\.md|AGENTS\.md|CHANGELOG\.md|.*\.pem|.*\.key|.*\.p12|.*\.dump|.*\.bson)$' | grep -v '\.env\.example$')
+  if [ -n "$FORBIDDEN" ]; then
+    echo "================================================================================"
+    echo "🚨 [GIT SECURITY] PUSH REJECTED: Sensitive file in outgoing commits:"
+    echo "$FORBIDDEN"
+    echo "================================================================================"
+    exit 1
+  fi
+  exit 0
+fi
+

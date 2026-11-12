@@ -1,0 +1,67 @@
+name: Git Security & Push Protection Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-audit:
+    name: Security & Secret Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Antigravity Push Protection Validator
+        run: node scripts/git-security-validator.js --ci
+
+      - name: Defense-in-Depth File Tree Verification
+        run: |
+          echo "Verifying that no forbidden files exist in tracked repository tree..."
+          
+          # Check for environment files (excluding .env.example)
+          ENV_FILES=$(git ls-files | grep -E '(^|/)\.env(\..+)?$' | grep -v '\.env\.example$' || true)
+          if [ -n "$ENV_FILES" ]; then
+            echo "::error::Forbidden environment file found in repository: $ENV_FILES"
+            exit 1
+          fi
+
+          # Check for private instruction files
+          PRIVATE_DOCS=$(git ls-files | grep -E '(^|/)(AGENT|AGENTS|CHANGELOG)\.md$' || true)
+          if [ -n "$PRIVATE_DOCS" ]; then
+            echo "::error::Private instruction file found in repository: $PRIVATE_DOCS"
+            exit 1
+          fi
+
+          # Check for private keys and certificates
+          KEYS=$(git ls-files | grep -E '\.(pem|key|p12|pfx|jks|keystore|crt|cer)$' || true)
+          if [ -n "$KEYS" ]; then
+            echo "::error::Private key or certificate found in repository: $KEYS"
+            exit 1
+          fi
+
+          # Check for database dumps and backups
+          DUMPS=$(git ls-files | grep -E '\.(dump|bson|backup|sqlite|sqlite3)$' || true)
+          if [ -n "$DUMPS" ]; then
+            echo "::error::Database dump or backup found in repository: $DUMPS"
+            exit 1
+          fi
+
+          # Check for uploads or customer documents
+          UPLOADS=$(git ls-files | grep -E '(^|/)(uploads|private-uploads|secure-uploads|customer-documents|vendor-documents|kyc-documents|aadhaar-documents|pan-documents|private-storage|sent_emails)/' || true)
+          if [ -n "$UPLOADS" ]; then
+            echo "::error::Uploads or customer document found in repository: $UPLOADS"
+            exit 1
+          fi
+
+          echo "✔ Defense-in-depth file tree verification passed. Repository is clean."
+

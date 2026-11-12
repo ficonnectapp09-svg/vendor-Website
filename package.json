@@ -7,7 +7,9 @@
     "build": "npm run build --prefix frontend",
     "postinstall": "npm install --prefix backend && npm install --prefix frontend",
     "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend",
-    "start": "node backend/server.js"
+    "start": "node backend/server.js",
+    "security:check": "node scripts/git-security-validator.js --ci",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "concurrently": "^8.2.2"

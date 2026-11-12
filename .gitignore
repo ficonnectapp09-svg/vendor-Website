@@ -1,7 +1,83 @@
-node_modules/
-dist/
-.vscode/
-.env
+# ==============================================================================
+# CONNECT APP BACKOFFICE - ROOT GITIGNORE & SECURITY POLICY
+# ==============================================================================
 
+# 1. Environment Secrets (Never commit actual credentials)
+.env
+.env.*
+*.env
+!.env.example
+
+# 2. Private Project Instructions (Strictly local to workspace)
 AGENT.md
+AGENTS.md
 CHANGELOG.md
+
+# 3. Dependencies
+node_modules/
+
+# 4. Build & Cache Outputs
+dist/
+build/
+coverage/
+.cache/
+.tmp/
+.temp/
+
+# 5. Logs & Debug Output
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# 6. Private Keys, Certificates & Tokens
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.cer
+
+# 7. Database Backups, Dumps & Storage
+*.dump
+*.bson
+*.backup
+*.sqlite
+*.sqlite3
+database-backup/
+db-backup/
+backups/
+mongodb-dumps/
+
+# 8. Private Documents & Uploads
+uploads/
+private-uploads/
+secure-uploads/
+customer-documents/
+vendor-documents/
+kyc-documents/
+aadhaar-documents/
+pan-documents/
+private-storage/
+sent_emails/
+
+# 9. Local Scratch & Debug Scripts (Contain DB queries/test accounts)
+backend/call_api.js
+backend/check_kathir.js
+backend/debug_vendors.js
+backend/query_orders.js
+backend/recreate_users.js
+backend/test_public_products.js
+backend/test_user.js
+backend/utils/sync_customer_and_business_data.js
+
+# 10. IDE & Operating System Files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json

@@ -1,0 +1,21 @@
+#!/bin/sh
+# ==============================================================================
+# Connect App Backoffice - Pre-Commit Hook (Version Controlled)
+# ==============================================================================
+
+if command -v node >/dev/null 2>&1; then
+  node scripts/git-security-validator.js --pre-commit
+  exit $?
+else
+  echo "[WARNING] Node.js is not found in PATH. Performing basic shell pre-commit check..."
+  FORBIDDEN=$(git diff --cached --name-only --diff-filter=ACM | grep -E '(^|/)(\.env(\..+)?|AGENT\.md|AGENTS\.md|CHANGELOG\.md|.*\.pem|.*\.key|.*\.p12|.*\.dump|.*\.bson)$' | grep -v '\.env\.example$')
+  if [ -n "$FORBIDDEN" ]; then
+    echo "================================================================================"
+    echo "🚨 [GIT SECURITY] COMMIT REJECTED: Sensitive file staged:"
+    echo "$FORBIDDEN"
+    echo "================================================================================"
+    exit 1
+  fi
+  exit 0
+fi
+

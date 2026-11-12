@@ -1,5 +1,62 @@
+# ==============================================================================
+# CONNECT APP BACKOFFICE - BACKEND GITIGNORE
+# ==============================================================================
+
+# Dependencies
 node_modules/
+
+# Environment Files
 .env
+.env.*
+*.env
+!.env.example
+
+# Runtime Uploads and Private Documents
 uploads/
 sent_emails/
+private-uploads/
+secure-uploads/
+customer-documents/
+vendor-documents/
+kyc-documents/
+aadhaar-documents/
+pan-documents/
+private-storage/
+
+# Logs & Debug Output
 *.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Database Backups & Dumps
+*.dump
+*.bson
+*.backup
+*.sqlite
+*.sqlite3
+database-backup/
+db-backup/
+backups/
+mongodb-dumps/
+
+# Private Keys & Certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.cer
+
+# Scratch & Debug Scripts
+call_api.js
+check_kathir.js
+debug_vendors.js
+query_orders.js
+recreate_users.js
+test_public_products.js
+test_user.js
+utils/sync_customer_and_business_data.js
