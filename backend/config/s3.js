@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
+const { uploadToCloudinary } = require('./cloudinary');
 
 dotenv.config();
 dotenv.config({ path: path.join(__dirname, '../.env') });
@@ -234,6 +235,24 @@ async function getObjectStream(key) {
  * guaranteeing 100% backward compatibility for legacy callers expecting a string URL.
  */
 async function uploadToS3(fileBufferOrPath, folder = 'connect_uploads', filenameHint = 'upload.jpg') {
+  // Prefer Cloudinary as the primary storage provider whenever configured
+  const hasCloudinary = Boolean(
+    process.env.CLOUDINARY_URL ||
+    process.env.CLOUDINARY_CLOUD_NAME ||
+    process.env.CLOUDINARY_API_KEY
+  );
+
+  if (hasCloudinary) {
+    try {
+      return await uploadToCloudinary(fileBufferOrPath, folder, filenameHint);
+    } catch (cErr) {
+      console.warn('[Storage] Cloudinary upload fallback attempt:', cErr.message);
+      if (!process.env.AWS_REGION || !process.env.AWS_S3_BUCKET) {
+        throw cErr;
+      }
+    }
+  }
+
   try {
     let buffer;
     let hint = filenameHint;
@@ -337,7 +356,7 @@ async function uploadToS3(fileBufferOrPath, folder = 'connect_uploads', filename
 
 module.exports = {
   uploadToS3,
-  uploadToCloudinary: uploadToS3,
+  uploadToCloudinary,
   getPresignedUrl,
   getDurableImageUrl,
   resolveDurableImageUrl,
