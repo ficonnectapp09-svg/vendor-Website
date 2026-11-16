@@ -359,6 +359,9 @@ const getVendorAnalytics = async (req, res) => {
     const pendingOrdersCount = orders.filter(o => ['Pending', 'Accepted', 'Out for Delivery', 'Checked In', 'Shortlisted', 'Interviewing', 'Approved', 'Order Received', 'Booking Received'].includes(o.status) && !isEligibleRevenueOrder(o)).length;
     
     const totalRevenue = eligibleOrders.reduce((sum, o) => sum + Number(o.finalAmount || o.totalAmount || o.amount || 0), 0);
+    const grossSales = orders
+      .filter(o => !['cancelled', 'rejected', 'failed'].includes(String(o.status || '').trim().toLowerCase()))
+      .reduce((sum, o) => sum + Number(o.finalAmount || o.totalAmount || o.amount || 0), 0);
 
     const memberIds = [...new Set(orders.map(o => o.memberId).filter(Boolean))];
 
@@ -486,6 +489,7 @@ const getVendorAnalytics = async (req, res) => {
     ];
 
     const analyticsData = {
+      grossSales,
       totalRevenue,
       ordersCount: totalOrdersCount,
       bookingsCount: totalBookingsCount,
@@ -1225,6 +1229,8 @@ const updateProduct = async (req, res) => {
         foodType: foodType !== undefined ? foodType : product.foodType,
         bookingType: bookingType !== undefined ? bookingType : product.bookingType,
         status: finalStatus,
+        isAvailable: req.body.isAvailable !== undefined ? (req.body.isAvailable === true || req.body.isAvailable === 'true') : (req.body.available !== undefined ? (req.body.available === true || req.body.available === 'true') : (finalStatus === 'Available')),
+        available: req.body.isAvailable !== undefined ? (req.body.isAvailable === true || req.body.isAvailable === 'true') : (req.body.available !== undefined ? (req.body.available === true || req.body.available === 'true') : (finalStatus === 'Available')),
         cardTypes: cardTypes !== undefined ? cardTypes : product.cardTypes,
         availableTimeSlots: availableTimeSlots !== undefined ? availableTimeSlots : product.availableTimeSlots,
         availableSizes: availableSizes !== undefined ? (Array.isArray(availableSizes) ? availableSizes : (typeof availableSizes === 'string' ? availableSizes.split(',').map(s=>s.trim()).filter(Boolean) : [])) : product.availableSizes,
@@ -3742,13 +3748,8 @@ const getCustomers = async (req, res) => {
       const custEmailClean = cust.email.toLowerCase();
       const custPhoneClean = (cust.phone || '').toString().trim().replace(/[^0-9]/g, '');
 
-      const custOrders = rawOrders.filter(o => {
+      const allCustOrders = rawOrders.filter(o => {
         if (o.type && APPLICATION_BASED_TYPES.includes(o.type)) return false;
-
-        const rawPayStatus = (o.paymentStatus || o.payment_status || '').toLowerCase();
-        const rawStatus = (o.status || '').toLowerCase();
-        const isPaid = ['paid', 'successful', 'completed'].includes(rawPayStatus) || ['delivered', 'completed', 'checked out'].includes(rawStatus);
-        if (!isPaid) return false;
 
         const oNameClean = (o.memberName || o.customer_name || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
         const oEmailClean = (o.candidateEmail || o.customer_email || (o.memberId && o.memberId.includes('@') ? o.memberId : '') || '').trim().toLowerCase();
@@ -3760,18 +3761,25 @@ const getCustomers = async (req, res) => {
         return false;
       });
 
-      const uniqueCustOrders = [];
-      const seenOrdIds = new Set();
-      for (const ord of custOrders) {
+      const uniqueAllOrders = [];
+      const seenAllOrdIds = new Set();
+      for (const ord of allCustOrders) {
         const oId = String(ord._id || ord.order_number || ord.id);
-        if (!seenOrdIds.has(oId)) {
-          seenOrdIds.add(oId);
-          uniqueCustOrders.push(ord);
+        if (!seenAllOrdIds.has(oId)) {
+          seenAllOrdIds.add(oId);
+          uniqueAllOrders.push(ord);
         }
       }
 
-      cust.ordersCount = uniqueCustOrders.length;
-      cust.totalSpent = uniqueCustOrders.reduce((sum, o) => sum + Number(o.finalAmount || o.totalAmount || o.amount || 0), 0);
+      const uniquePaidOrders = uniqueAllOrders.filter(o => {
+        const rawPayStatus = (o.paymentStatus || o.payment_status || '').toLowerCase();
+        const rawStatus = (o.status || '').toLowerCase();
+        return ['paid', 'successful', 'completed'].includes(rawPayStatus) || ['delivered', 'completed', 'checked out'].includes(rawStatus);
+      });
+
+      cust.ordersCount = uniquePaidOrders.length;
+      cust.totalVisits = uniqueAllOrders.length;
+      cust.totalSpent = uniquePaidOrders.reduce((sum, o) => sum + Number(o.finalAmount || o.totalAmount || o.amount || 0), 0);
 
       const isCanonical = (id) => id && (String(id).startsWith('FIC-CUS-') || String(id).startsWith('FIC-CUST-')) && String(id) !== 'FIC-CUST-100001';
       let canonicalId = isCanonical(cust.customerId)
@@ -5645,7 +5653,7 @@ const getSalesPayments = async (req, res) => {
 
     if (requestedCategory) {
       let catPattern = requestedCategory;
-      if (requestedCategory === 'Products') catPattern = 'product|products|order|orders';
+      if (requestedCategory === 'Products') catPattern = 'product|products';
       else if (requestedCategory === 'Services') catPattern = 'service|services|appointment|appointments';
       else if (requestedCategory === 'Stay') catPattern = 'stay|stays|hotel|hotels|room|rooms';
       else if (requestedCategory === 'Daily Needs') catPattern = 'daily needs|daily need|daily_needs|grocery|pharmacy';
@@ -5817,19 +5825,26 @@ const getSalesPayments = async (req, res) => {
       }
 
       // Business category normalized
-      let category = o.type || o.category || 'Products';
+      const rawCatStr = String(o.mainCategory || o.category || (o.items && o.items[0]?.mainCategory) || (o.items && o.items[0]?.category) || o.businessCategory || o.type || '').trim();
       const detailStr = String(o.product_details || (o.items && o.items[0]?.name) || '');
-      if (/car|bus|bike|travel|cab|transport|package/i.test(category) || /car|bus|bike|travel|cab|transport|package/i.test(detailStr) || (o.items && o.items.some(it => /car|bus|bike|travel|cab|transport|package/i.test(it?.name || '')))) {
-        category = 'Travel';
-      } else if (/stay|hotel|room|resort/i.test(category) || /room|suite|villa|resort|hotel/i.test(detailStr)) {
-        category = 'Stay';
-      } else if (/food|restaurant/i.test(category) || /food|biryani|pizza|burger/i.test(detailStr)) {
+      const foodItemsCheck = (o.items && Array.isArray(o.items) && o.items.some(it => {
+        const c = String(it.category || it.mainCategory || '').toLowerCase();
+        const n = String(it.name || '').toLowerCase();
+        return c.includes('food') || /dosa|idly|biryani|chicken|pizza|burger|meal|curry|roti|paneer|tea|coffee|rice|snack|makhani|naan|vada|poori|pongal/i.test(n);
+      }));
+
+      let category = 'Products';
+      if (/food|restaurant/i.test(rawCatStr) || /food|biryani|pizza|burger|dosa|idly|meal|curry|roti|paneer|chicken|makhani|naan/i.test(detailStr) || foodItemsCheck) {
         category = 'Food';
-      } else if (/daily/i.test(category)) {
+      } else if (/car|bus|bike|travel|cab|transport|package/i.test(rawCatStr) || /car|bus|bike|travel|cab|transport|package/i.test(detailStr) || (o.items && o.items.some(it => /car|bus|bike|travel|cab|transport|package/i.test(it?.name || '')))) {
+        category = 'Travel';
+      } else if (/stay|hotel|room|resort/i.test(rawCatStr) || /room|suite|villa|resort|hotel/i.test(detailStr)) {
+        category = 'Stay';
+      } else if (/daily/i.test(rawCatStr)) {
         category = 'Daily Needs';
-      } else if (/service|appointment/i.test(category) || o.doctorName) {
+      } else if (/service|appointment/i.test(rawCatStr) || o.doctorName || o.serviceName) {
         category = 'Services';
-      } else if (/job/i.test(category)) {
+      } else if (/job/i.test(rawCatStr) || o.candidateEmail) {
         category = 'Jobs';
       } else {
         category = 'Products';
