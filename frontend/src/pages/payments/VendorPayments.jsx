@@ -389,7 +389,7 @@ export default function VendorPayments() {
     }
   }, [fetchAdminPayments, mainTab]);
 
-  // Background Auto-Refresh Engine for Vendor Admin Payments (Every 6s, silent, tab-visibility aware)
+  // Background Auto-Refresh Engine for Vendor Admin Payments (30s interval, silent, tab-visibility aware with 15s cooldown)
   useEffect(() => {
     if (mainTab !== 'admin') return;
 
@@ -399,11 +399,11 @@ export default function VendorPayments() {
         lastFetch = Date.now();
         fetchAdminPayments(true);
       }
-    }, 6000);
+    }, 30000);
 
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && (typeof navigator === 'undefined' || navigator.onLine)) {
-        if (Date.now() - lastFetch >= 5000) {
+        if (Date.now() - lastFetch >= 15000) {
           lastFetch = Date.now();
           fetchAdminPayments(true);
         }

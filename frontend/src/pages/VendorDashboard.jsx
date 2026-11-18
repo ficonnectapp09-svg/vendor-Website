@@ -3500,10 +3500,20 @@ const VendorDashboard = () => {
       }
     };
 
-    const syncInterval = Number(import.meta.env.VITE_SYNC_INTERVAL) || 30000;
-    const interval = setInterval(fetchOrdersFallback, syncInterval);
+    let lastFallbackSyncAt = Date.now();
+    const baseSyncInterval = Number(import.meta.env.VITE_SYNC_INTERVAL) || 20000;
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      const wsHealthy = Boolean(wsClient && wsClient.isConnected);
+      const requiredGapMs = wsHealthy ? 60000 : baseSyncInterval;
+      if (Date.now() - lastFallbackSyncAt >= requiredGapMs) {
+        lastFallbackSyncAt = Date.now();
+        fetchOrdersFallback();
+      }
+    }, Math.min(baseSyncInterval, 20000));
     const handleVis = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && (Date.now() - lastFallbackSyncAt >= 15000)) {
+        lastFallbackSyncAt = Date.now();
         fetchOrdersFallback();
       }
     };

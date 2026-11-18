@@ -8,6 +8,7 @@ import Modal from '../common/Modal';
 import NotificationDropdown from '../common/NotificationDropdown';
 import { vendorTaxonomy } from '../../data/servicesData';
 import { getVendorBackendUrl } from '../../services/apiSetup';
+import wsClient from '../../realtime/wsClient';
 
 const Navbar = () => {
   const { user, isAuthenticated, token, sidebarCollapsed, activeBusinessId } = useSelector((state) => state.auth);
@@ -114,12 +115,18 @@ const Navbar = () => {
       }
     };
     fetchOrders();
-    const syncInterval = Number(import.meta.env.VITE_SYNC_INTERVAL) || 30000;
+    let lastNavOrderPollAt = Date.now();
+    const baseInterval = Number(import.meta.env.VITE_SYNC_INTERVAL) || 30000;
     const interval = setInterval(() => {
-      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      // Avoid duplicating VendorDashboard's live WebSocket + reconciliation stream; poll every 60s when WS connected
+      const wsHealthy = Boolean(wsClient && wsClient.isConnected);
+      const requiredGapMs = wsHealthy ? 60000 : baseInterval;
+      if (Date.now() - lastNavOrderPollAt >= requiredGapMs) {
+        lastNavOrderPollAt = Date.now();
         fetchOrders();
       }
-    }, syncInterval);
+    }, baseInterval);
     return () => clearInterval(interval);
   }, [isAuthenticated, token, user, activeBusinessId]);
 
