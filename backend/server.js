@@ -67,8 +67,8 @@ app.use(
           "https://*.ficapp.in",
           "wss://vendor.ficapp.in",
           "wss://*.ficapp.in",
-          "https://vendor-website-9fjw.onrender.com",
-          "wss://vendor-website-9fjw.onrender.com",
+          "https://customer-website-2x11.onrender.com",
+          "wss://customer-website-2x11.onrender.com",
           "https://*.onrender.com",
           "wss://*.onrender.com",
           "https://connect-vendor.vercel.app",
@@ -122,7 +122,7 @@ const allowedOrigins = [
   'https://vendor.ficapp.in',
   'http://vendor.ficapp.in',
   'https://connect-vendor.vercel.app',
-  'https://vendor-website-9fjw.onrender.com',
+  'https://customer-website-2x11.onrender.com',
   'https://connect-admin-96pc.onrender.com',
   'http://localhost:5173',
   'http://localhost:5174',
@@ -133,6 +133,9 @@ const allowedOrigins = [
   'http://127.0.0.1:3000',
   'http://127.0.0.1:8002'
 ];
+if (process.env.BACKEND_URL && !allowedOrigins.includes(process.env.BACKEND_URL)) {
+  allowedOrigins.push(process.env.BACKEND_URL);
+}
 
 if (process.env.FRONTEND_URL) {
   process.env.FRONTEND_URL.split(',').forEach((o) => {
