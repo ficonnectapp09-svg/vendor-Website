@@ -32,7 +32,7 @@ export const getBackendUrl = () => {
   }
   
   // 3. Fallback to production backend URL
-  return 'https://connect-vendor-p1ij.onrender.com';
+  return 'https://vendor-website-9fjw.onrender.com';
 };
 
 export const getWebSocketUrl = () => {
@@ -60,7 +60,7 @@ export const getWebSocketUrl = () => {
 
   // 3. Deployed and remote environments (Vercel, Render, ficapp.in):
   // Render supports WebSockets directly on the server URL
-  return 'https://connect-vendor-p1ij.onrender.com';
+  return 'https://vendor-website-9fjw.onrender.com';
 };
 
 // Set up Axios request interceptor to dynamically rewrite backend URLs and inject headers
@@ -82,7 +82,7 @@ axios.interceptors.request.use(
         config.url.includes('vendor.ficapp.in')
       ) {
         // Replaces localhost ports, stale cloud tunnels/IPs, or legacy domains with active backendUrl
-        config.url = config.url.replace(/^https?:\/\/[^/]+/, backendUrl || 'https://connect-vendor-p1ij.onrender.com');
+        config.url = config.url.replace(/^https?:\/\/[^/]+/, backendUrl || 'https://vendor-website-9fjw.onrender.com');
       } else if (config.url.startsWith('/api')) {
         config.url = backendUrl ? `${backendUrl}${config.url}` : config.url;
       }
@@ -180,7 +180,7 @@ const sanitizeResponseUrls = (val, backendUrl, depth = 0) => {
         return val.replace(/^https?:\/\/[^/]+/, backendUrl || '');
       }
       if (val.includes('vendor.ficapp.in/uploads/')) {
-        const activeB = (backendUrl && backendUrl.startsWith('http')) ? backendUrl : 'https://connect-vendor-p1ij.onrender.com';
+        const activeB = (backendUrl && backendUrl.startsWith('http')) ? backendUrl : 'https://vendor-website-9fjw.onrender.com';
         return val.replace(/^https?:\/\/vendor\.ficapp\.in/, activeB);
       }
     }
@@ -320,7 +320,7 @@ axios.interceptors.response.use(
 
     // On network error retry, correctly rewrite failed local URL to remote production backend
     if (isNetworkError && config.url) {
-      const activeBase = getBackendUrl() || 'https://connect-vendor-p1ij.onrender.com';
+      const activeBase = getBackendUrl() || 'https://vendor-website-9fjw.onrender.com';
       if (config.url.startsWith('/api')) {
         config.url = `${activeBase}${config.url}`;
       } else if (config.url.includes('/api/')) {
@@ -387,7 +387,7 @@ export const formatImageUrl = (url) => {
 
   let backend = getBackendUrl();
   if (!backend || !backend.startsWith('http')) {
-    backend = 'https://connect-vendor-p1ij.onrender.com';
+    backend = 'https://vendor-website-9fjw.onrender.com';
   }
   if (backend.endsWith('/api')) {
     backend = backend.substring(0, backend.length - 4);
