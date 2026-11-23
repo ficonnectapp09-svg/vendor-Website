@@ -2,8 +2,8 @@
   "buildCommand": "vite build",
   "outputDirectory": "dist",
   "routes": [
-    { "src": "/api/(.*)", "dest": "https://customer-website-2x11.onrender.com/api/$1" },
-    { "src": "/uploads/(.*)", "dest": "https://customer-website-2x11.onrender.com/uploads/$1" },
+    { "src": "/api/(.*)", "dest": "https://vendor-website-9fjw.onrender.com/api/$1" },
+    { "src": "/uploads/(.*)", "dest": "https://vendor-website-9fjw.onrender.com/uploads/$1" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]

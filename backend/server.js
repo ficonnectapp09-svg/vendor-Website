@@ -67,6 +67,8 @@ app.use(
           "https://*.ficapp.in",
           "wss://vendor.ficapp.in",
           "wss://*.ficapp.in",
+          "https://vendor-website-9fjw.onrender.com",
+          "wss://vendor-website-9fjw.onrender.com",
           "https://customer-website-2x11.onrender.com",
           "wss://customer-website-2x11.onrender.com",
           "https://*.onrender.com",
@@ -121,7 +123,9 @@ app.use(
 const allowedOrigins = [
   'https://vendor.ficapp.in',
   'http://vendor.ficapp.in',
+  'https://vendor-website-eight.vercel.app',
   'https://connect-vendor.vercel.app',
+  'https://vendor-website-9fjw.onrender.com',
   'https://customer-website-2x11.onrender.com',
   'https://connect-admin-96pc.onrender.com',
   'http://localhost:5173',
